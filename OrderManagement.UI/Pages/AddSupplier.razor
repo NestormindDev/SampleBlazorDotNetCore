@@ -1,0 +1,126 @@
+﻿@page "/supplier/add"
+@using OrderManagement.UI.Dto;
+@using OrderManagement.UI.Services.Interface;
+@inject ISupplierService _supplierService;
+@inject IStateService _stateService;
+@inject ICityService _cityService;
+@inject NavigationManager NavManager;
+@inject HttpClient Http;
+@inject IJSRuntime JsRuntime;
+
+<table width="100%" style="background:#05163D;color:honeydew">
+    <tr>
+        <td width="20"> </td>
+        <td>
+            <h2>Add Supplier</h2>
+        </td>
+    </tr>
+</table>
+<hr />
+
+<form>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="form-group">
+                  <label for="Name" class="control-label">Supplier Name</label>
+                  <input type="text" class="form-control" @bind="@addSupplierDto.SupplierName" />
+            </div>
+             <div class="form-group">
+                <label for="Name" class="control-label">Address 1</label>
+                <input type="text" class="form-control" @bind="@addSupplierDto.AddressLine1" />
+            </div>
+            <div class="form-group">
+                <label for="Email" class="control-label">Address 2</label>
+                 <input type="text" class="form-control" @bind="@addSupplierDto.AddressLine2" />
+            </div>
+            <div class="form-group">
+                  <label for="Name" class="control-label">Postal Code</label>
+                  <input type="text" class="form-control" @bind="@addSupplierDto.PostalCode" />
+            </div>
+            <div class="form-group">
+               <label for="state" class="control-label">State</label>
+                <select class="form-control" id="State" name="State" @onchange="@onStateChange">
+                    <option value="0" disabled selected>select State </option>
+                    @if (allState!= null && allState.Data != null)
+                    {
+                        @foreach (var state in allState.Data)
+                        {
+                            <option value=@state.Id>@state.Name</option>
+                        }
+                    }
+
+                </select>
+            </div>
+            <div class="form-group">
+                 <label for="city" class="control-label">City</label>
+                     <select class="form-control" id="City" name="City" @bind="@addSupplierDto.CityId">
+                    <option value="0" disabled selected>select City </option>
+                    @if (allCity!= null && allCity.Data!=null)
+                    {
+                        foreach (var city in allCity.Data)
+                        {
+                            <option value=@city.Id>@city.Name</option>
+                        }
+                    }
+
+                </select>
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+               <button type="button" class="btn btn-success" @onclick="@CreateSupplier" style="width:220px;">Save</button>
+               <button type="button" class="btn btn-light" @onclick="@Cancel" style="width:220px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@code {
+    private ResponseDto<List<StateDto>> allState;
+    private ResponseDto<List<CityDto>> allCity;
+    private SupplierDto addSupplierDto = new SupplierDto();
+    protected override async Task OnInitializedAsync()
+    {
+        //await base.OnInitializedAsync();
+        allState = new();
+        allState = await _stateService.GetAll();
+    }
+    private async void CreateSupplier()
+    {
+        if (this.addSupplierDto != null)
+        {
+            var result = await _supplierService.Add(addSupplierDto);
+            if (result.Data != null)
+            {
+                await JsRuntime.InvokeAsync<object>("alert", "Supplier created Successfully");
+                NavManager.NavigateTo("supplier");
+            }
+            else
+            {
+                 await JsRuntime.InvokeAsync<object>("alert", "Something went wrong");
+                 NavManager.NavigateTo("supplier");
+            }
+        }
+    }
+   void Cancel()
+    {
+        NavManager.NavigateTo("supplier");
+    }
+    private void onCityChange(ChangeEventArgs e)
+    {
+        int cityId = Convert.ToInt32(e.Value);
+        this.addSupplierDto.CityId = cityId;
+        this.StateHasChanged();
+    }
+    private async void onStateChange(ChangeEventArgs e)
+    {
+        allCity = new();
+        int stateId = Convert.ToInt32(e.Value);
+        this.addSupplierDto.StateId = stateId;
+        allCity = await this._cityService.GetById(stateId);
+        this.StateHasChanged();
+    }
+}

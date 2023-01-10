@@ -1,0 +1,120 @@
+﻿@page "/supplier"
+@using OrderManagement.UI.Dto;
+@using OrderManagement.UI.Services.Interface;
+@inject HttpClient Http;
+@inject ISupplierService _supplierService;
+@inject IStateService _stateService;
+@inject ICityService _cityService;
+@inject IJSRuntime JsRuntime;
+@inject NavigationManager NavManager;
+
+@code {
+    private ResponseDto<List<SupplierDto>> allSupplier=new();
+    protected override async Task OnInitializedAsync()
+    {
+        allSupplier = await _supplierService.GetAll();
+        //await base.OnInitializedAsync();
+    }
+    private async Task Delete(int id,string supplierName)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure do you want to delete? "+supplierName+" supplier");
+        if (confirmed)
+        {
+            var result = await _supplierService.Delete(id);
+            if (result)
+            {
+                allSupplier = await _supplierService.GetAll();
+            }
+        }
+    }
+    private void AddNewSupplier()
+    {
+        NavManager.NavigateTo("/supplier/add");
+    }
+}
+<hr />
+<table width="100%" style="background:#05163D;color:honeydew">
+    <tr>
+        <td width="20"> </td>
+        <td>
+            <h2>Create Supplier</h2>
+        </td>
+        <td> </td>
+       
+            <td align="right">
+                <button class="btn btn-info" @onclick="@AddNewSupplier">Add new supplier</button>
+            </td>
+    </tr>
+</table>
+<hr />
+
+@if ((List<SupplierDto>)allSupplier.Data==null)
+{
+    <h3> No Supplier Found </h3>
+    <div class="spinner"></div>
+}
+else
+{
+    <h3>Suppliers List</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th hidden="hidden">Supplier Id</th>
+                <th>Supplier Name</th>
+                <th>Address 1</th>
+                <th>Adress 2</th>
+                <th>State</th>
+                <th>City</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var supplierDto in allSupplier.Data)
+            {
+                <tr>
+                    <td hidden="hidden">@supplierDto.Id</td>
+                    <td>@supplierDto.SupplierName</td>
+                    <td>@supplierDto.AddressLine1</td>
+                    <td>@supplierDto.AddressLine2</td>
+                    <td>@supplierDto.StateDto.Name</td>
+                    <td>@supplierDto.CityDto.Name</td>
+                   @* <td><button class="btn btn-primary" @onclick="@(async () => await Edit(supplierDto.Id))" style="width:110px;">Edit</button></td>*@
+                    <td>
+                         <a href='/supplier/edit/@supplierDto.Id' class="btn btn-outline-dark" role="button">
+                            Edit
+                        </a>
+                      @*  <button class="btn btn-danger" @onclick="@(async () => await Delete((int)supplierDto.Id,supplierDto.SupplierName))">Delete</button>*@
+                      <a  @onclick="@(async () => await Delete((int)supplierDto.Id,supplierDto.SupplierName))" class="btn btn-outline-danger" role="button">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<style type="text/css">
+    .spinner {
+    border: 16px solid silver;
+    border-top: 16px solid #337AB7;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    animation: spin 700ms linear infinite;
+    top: 40%;
+    left: 55%;
+    position: absolute;
+}
+
+@@keyframes spin {
+    0% {
+        transform: rotate(0deg)
+    }
+
+    100% {
+        transform: rotate(360deg)
+    }
+}
+</style>
+
+
